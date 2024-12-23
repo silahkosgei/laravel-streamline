@@ -29,10 +29,9 @@ class MakeStream extends Command
     public function handle()
     {
         $name = $this->argument('name');
-        $config = config('streamline');
 
-        $namespace = $config['class_namespace'];
-        $postfix = $config['class_postfix'];
+        $namespace = config('streamline.class_namespace', 'App\\Streams');
+        $postfix = config('streamline.class_postfix', 'Stream');
 
         // Parse input name to determine namespace and class name
         $pathParts = explode('/', $name);

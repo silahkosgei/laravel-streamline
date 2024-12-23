@@ -38,10 +38,13 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
             abort(404, $error);
         }
 
-        $action = $request->input('action');
+        $action = $request->input('action','onMounted');
         $params = $request->input('params', []);
-
-        $instance = app($class);
+        $constructorParams = [];
+        if(!$action || $action == 'onMounted'){
+            $constructorParams = $params;
+        }
+        $instance = new $class(...$constructorParams);
         $instance->setAction($action);
         $requestData = $request->all();
         // remove action and params from request data
@@ -59,7 +62,7 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
     {
         $request->validate([
             'stream' => 'required|string',
-            'action' => 'required|string',
+            'action' => 'nullable|string',
             'params' => ''// this is optional,
         ]);
         if ($request->has('params')) {

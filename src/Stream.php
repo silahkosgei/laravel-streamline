@@ -86,6 +86,11 @@ abstract  class Stream
         return abort(response($data, $status));
     }
 
+    public function onMounted()
+    {
+        //return class instance
+        return $this->toArray();
+    }
     protected function toArray()
     {
         // get public properties of the class instance then return them as an array
