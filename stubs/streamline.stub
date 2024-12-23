@@ -1,0 +1,10 @@
+<?php
+
+namespace {{ namespace }};
+
+use Iankibet\Streamline\Stream;
+
+class {{ class }} extends Stream
+{
+
+}

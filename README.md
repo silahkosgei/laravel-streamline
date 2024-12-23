@@ -22,10 +22,13 @@ Here is how the config file looks like:
     
 ```php
 return [
-    'class_namespace' => 'App\\Services',
-    'class_postfix' => 'Streamline',
+    'class_namespace' => 'App\\Streams',
+    'class_postfix' => 'Stream',
     'route' => 'api/streamline',
-    'middleware' => ['auth:api'],
+    'middleware' => ['auth:sanctum'],
+    'guest_streams' => [
+        'auth/auth'
+    ]
 ];
 ```
 
@@ -33,19 +36,23 @@ Modify the values to suit your application.
 
 ### ```class_namespace```
 
-This is the namespace where the service/streamline classes are located. The default value is `App\Services`.
+This is the namespace where the stream classes are located. The default value is `App\Streams`.
 
 ### ```class_postfix```
 
-This is the postfix that is added to the vue component name to determine the service/streamline class to bind to the component. The default value is `Streamline`. For example, if the vue component name is `User`, the service/streamline class will be `UserStreamline`.
+This is the postfix that is added to the stream class to easily identify streamline . The default value is `Stream`. For example, if the Stream name is `User`, the stream class will be `UsersStream`.
+
+### ```guest_streams```
+
+This is an array of streams that can be accessed without authentication. The default value is `['auth/auth']`.
 
 ## Implementation
-To use, first import the StreamlineComponent and extend it in yur class as show below:
+To use, first import the Stream and extend it in yur class as show below:
 
 ```php
-use iankibet\Streamline\Component;
+use iankibet\Streamline\Stream;
 
-class TasksStreamline extends Component
+class TasksStreamline extends Stream
 {
 
 }
@@ -55,7 +62,7 @@ class TasksStreamline extends Component
 To validate, use Validate attribute as shown below:
 
 ```php
-use iankibet\Streamline\Component;
+use iankibet\Streamline\Stream;
 use iankibet\Streamline\Validate;
 
 // in the method
@@ -72,7 +79,7 @@ use iankibet\Streamline\Validate;
 }
 ```
 
-### Authorization
+### Permission Authorization
 
 To authorize, use Permission attribute as shown below:
 
@@ -92,10 +99,20 @@ use iankibet\Streamline\Permission;
 }
 ```
 
-### Testing the component
+### Create a new Stream
 
-To test the component, use the following command: Replace `TasksStreamline` with the name of your component.
+To create a new Stream, use the following command:
 
 ```sh
-php artisan streamline:test TasksStreamline
+php artisan streamline:stream TasksStream
+```
+
+This will create a new Stream class in the `app/Streams` directory.
+
+### Testing the Stream
+
+To test the Stream, use the following command: Replace `TasksStream` with the name of your streams.
+
+```sh
+php artisan streamline:test TasksStream
 ```

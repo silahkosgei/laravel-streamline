@@ -2,33 +2,49 @@
 
 namespace Iankibet\Streamline\Features\Streamline;
 
+use App\Http\Controllers\Controller;
 use Iankibet\Streamline\Attributes\Permission;
 use Iankibet\Streamline\Attributes\Validate;
 use Iankibet\Streamline\Component;
 use Iankibet\Streamline\Features\Support\StreamlineSupport;
+use Iankibet\Streamline\Stream;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Str;
 
-class HandleStreamlineRequest
+class HandleStreamlineRequest extends Controller implements HasMiddleware
 {
+
+    protected $classReflection;
+
     public function handleRequest(Request $request)
     {
+        $middleware = config('streamline.middleware', []);
+        $this->middleware($middleware);
         $this->validateRequest($request);
 
         $class = StreamlineSupport::convertStreamToClass($request->input('stream'));
 
+        $guestClasses = config('streamline.guest_classes', []);
+        if (in_array($class, $guestClasses)) {
+            $this->middleware('guest');
+        }
+
         if (!class_exists($class)) {
-            $error = 'Service class not found';
+            $error = 'Stream class not found';
             if (app()->environment('local')) {
                 $error .= ' - ' . $class;
             }
             abort(404, $error);
         }
 
-        $action = $request->input('action');
+        $action = $request->input('action','onMounted');
         $params = $request->input('params', []);
-
-        $instance = app($class);
+        $constructorParams = [];
+        if(!$action || $action == 'onMounted'){
+            $constructorParams = $params;
+        }
+        $instance = new $class(...$constructorParams);
         $instance->setAction($action);
         $requestData = $request->all();
         // remove action and params from request data
@@ -38,7 +54,7 @@ class HandleStreamlineRequest
         if (!method_exists($instance, $action)) {
             abort(404, 'Action not found');
         }
-
+        $this->classReflection = new \ReflectionClass($instance);
         return $this->invokeAction($instance, $action, $params);
     }
 
@@ -46,7 +62,7 @@ class HandleStreamlineRequest
     {
         $request->validate([
             'stream' => 'required|string',
-            'action' => 'required|string',
+            'action' => 'nullable|string',
             'params' => ''// this is optional,
         ]);
         if ($request->has('params')) {
@@ -72,15 +88,12 @@ class HandleStreamlineRequest
             abort(400, 'Missing required parameters: ' . implode(', ', $missingParams));
         }
         // check if instance implements StreamlineComponent
-        if (!$instance instanceof Component) {
-            abort(404, 'Service class must implement streamline Component');
+        if (!$instance instanceof Component && !$instance instanceof Stream) {
+            abort(404, 'Streamline class must extend Iankibet\Streamline\Stream');
         }
         // check if action has Validate attribute
-        $validateAttributes = $reflection->getAttributes(Validate::class);
-        if (count($validateAttributes) > 0) {
-            $instance->validate();
-        }
-        $reflectionClass = new \ReflectionClass($instance);
+
+        $reflectionClass = $this->classReflection;
         $classAttributes = $reflectionClass->getAttributes(Permission::class);
         // check attributes for permission on the action
         $attributes = $reflection->getAttributes(Permission::class);
@@ -91,12 +104,30 @@ class HandleStreamlineRequest
                 $permissionSlugs = $permissionInstance->getPermissions();
                 foreach ($permissionSlugs as $permissionSlug) {
                     $user = \request()->user();
-                    if (!$user->can($permissionSlug)) {
+                    if (!$user || !$user->can($permissionSlug)) {
                         abort(403, 'Unauthorized: ' . $permissionSlug);
                     }
                 }
             }
         }
+        $validateAttributes = $reflection->getAttributes(Validate::class);
+        if (count($validateAttributes) > 0) {
+            $instance->validate();
+        }
         return $instance->$action(...array_values($params));
+    }
+
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        $stream = \request('stream');
+        $guestStream = config('streamline.guest_streams', []);
+        if (in_array($stream, $guestStream)) {
+            return ['guest'];
+        }
+        $middleware = config('streamline.middleware', []);
+        return $middleware;
     }
 }
