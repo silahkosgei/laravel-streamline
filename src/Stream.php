@@ -3,13 +3,10 @@
 namespace Iankibet\Streamline;
 
 
-use App\Models\User;
 use Iankibet\Streamline\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
-/**
- * @deprecated This class will be deprecated in version 1.2
- */
-abstract  class Component
+
+abstract  class Stream
 {
     protected $isTesting = false;
 
@@ -66,16 +63,19 @@ abstract  class Component
         return $validator->validated();
     }
 
-    public function only($keys)
+    public function only()
     {
         $data = $this->validate();
+        $arguments = func_get_args();
+        if(count($arguments) == 1 && !is_array($arguments[0])) {
+            return $data[$arguments[0]] ?? null;
+        }
+        if(count($arguments) == 1 && is_array($arguments[0])) {
+            $keys = $arguments[0];
+        } else {
+            $keys = $arguments;
+        }
         return collect($data)->only($keys)->toArray();
-    }
-
-    public function onMounted()
-    {
-        //return class instance
-        return $this->toArray();
     }
 
     protected function response($data, $status = 200)
@@ -83,7 +83,7 @@ abstract  class Component
         if(app()->runningInConsole()){
             dd($data);
         }
-        abort(response($data, $status));
+        return abort(response($data, $status));
     }
 
     protected function toArray()

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Facade;
 class Streamline extends Facade
 {
 
+    // test static method
     protected static function getFacadeAccessor(): string
     {
         return 'streamline';

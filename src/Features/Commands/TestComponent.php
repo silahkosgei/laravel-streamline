@@ -6,6 +6,7 @@ use App\Models\User;
 use Iankibet\Streamline\Attributes\Validate;
 use Iankibet\Streamline\Component;
 use Iankibet\Streamline\Features\Support\StreamlineSupport;
+use Iankibet\Streamline\Stream;
 use Illuminate\Console\Command;
 
 class TestComponent extends Command
@@ -15,14 +16,14 @@ class TestComponent extends Command
      *
      * @var string
      */
-    protected $signature = 'streamline:test-component {component?}';
+    protected $signature = 'streamline:test-stream {stream?}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Test a streamline component';
+    protected $description = 'Test a stream';
 
     /**
      * Execute the console command.
@@ -31,16 +32,16 @@ class TestComponent extends Command
     public function handle()
     {
         //
-        $component = $this->argument('component');
+        $component = $this->argument('stream');
         if(!$component){
             $classes = StreamlineSupport::getStreamlineClasses();
-            $component = $this->anticipate('Enter Component', $classes);
+            $component = $this->anticipate('Enter Stream', $classes);
         }
         $class = StreamlineSupport::convertStreamToClass($component);
 
         $instance = app($class);
-        if(!$instance instanceof  Component){
-            $this->error('Service class must implement streamline Component');
+        if(!$instance instanceof  Stream){
+            $this->error('Stream class must implement stream');
             exit;
         }
         $classReflection = new \ReflectionClass($class);

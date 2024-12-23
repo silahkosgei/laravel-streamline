@@ -1,7 +1,10 @@
 <?php
 return [
-    'class_namespace' => 'App\\Services',
-    'class_postfix' => 'Streamline',
+    'class_namespace' => 'App\\Streams',
+    'class_postfix' => 'Stream',
     'route' => 'api/streamline',
-    'middleware' => ['auth:api'],
+    'middleware' => ['auth:sanctum'],
+    'guest_streams' => [
+        'auth/auth'
+    ]
 ];
