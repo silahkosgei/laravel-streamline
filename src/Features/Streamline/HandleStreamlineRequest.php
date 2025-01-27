@@ -115,15 +115,6 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
     {
         // Check if the required parameters are provided, Reflection is slow so only do this in local environment for debugging
         $reflection = new \ReflectionMethod($instance, $action);
-        $requiredParams = $reflection->getNumberOfRequiredParameters();
-        if (count($params) < $requiredParams) {
-            $missingParams = array_diff(
-                array_map(fn($param) => $param->getName(), $reflection->getParameters()),
-                array_keys($params)
-            );
-
-            abort(400, 'Missing required parameters: ' . implode(', ', $missingParams));
-        }
         // check if instance implements StreamlineComponent
         if (!$instance instanceof Component && !$instance instanceof Stream) {
             abort(404, 'Streamline class must extend Iankibet\Streamline\Stream');
