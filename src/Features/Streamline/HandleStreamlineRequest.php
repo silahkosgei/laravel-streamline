@@ -44,7 +44,8 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
         if(!$action || $action == 'onMounted'){
             $constructorParams = $params;
         }
-        $instance = new $class(...$constructorParams);
+//        $instance = new $class(...$constructorParams);
+        $instance = app()->make($class, $constructorParams);
         $instance->setAction($action);
         $requestData = $request->all();
         // remove action and params from request data
