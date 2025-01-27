@@ -45,7 +45,7 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
             $constructorParams = $params;
         }
 //        $instance = new $class(...$constructorParams);
-        $instance = app()->make($class, $constructorParams);
+        $instance = $this->resolveInstance($class, $constructorParams);
         $instance->setAction($action);
         $requestData = $request->all();
         // remove action and params from request data
@@ -55,8 +55,44 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
         if (!method_exists($instance, $action)) {
             abort(404, 'Action not found');
         }
-        $this->classReflection = new \ReflectionClass($instance);
         return $this->invokeAction($instance, $action, $params);
+    }
+
+    protected function resolveInstance(string $class, array $constructorParams): object
+    {
+        $reflection = new \ReflectionClass($class);
+        $this->classReflection = $reflection;
+
+        $constructor = $reflection->getConstructor();
+
+        if ($constructor) {
+            // Get all parameters of the constructor
+            $parameters = $constructor->getParameters();
+
+            // Resolve each parameter (either from the container or provided manually)
+            $resolvedParams = [];
+            foreach ($parameters as $index => $parameter) {
+                if (isset($constructorParams[$index])) {
+                    // Use the provided indexed parameter
+                    $resolvedParams[] = $constructorParams[$index];
+                } elseif ($parameter->getType() && !$parameter->getType()->isBuiltin()) {
+                    // Resolve class dependencies via the container
+                    $resolvedParams[] = app($parameter->getType()->getName());
+                } elseif ($parameter->isDefaultValueAvailable()) {
+                    // Use the default value if available
+                    $resolvedParams[] = $parameter->getDefaultValue();
+                } else {
+                    // Throw an exception if a required parameter is missing
+                    throw new \InvalidArgumentException("Missing required parameter [{$parameter->getName()}] for [{$class}].");
+                }
+            }
+
+            // Return an instance of the class with resolved parameters
+            return $reflection->newInstanceArgs($resolvedParams);
+        }
+
+        // If no constructor, simply resolve the class
+        return new $class;
     }
 
     protected function validateRequest(Request $request)
@@ -115,7 +151,27 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
         if (count($validateAttributes) > 0) {
             $instance->validate();
         }
-        return $instance->$action(...array_values($params));
+        $params = array_filter(array_values($params));
+        $parameters = $reflection->getParameters();
+
+        // Resolve each parameter (either from the container or provided manually)
+        $resolvedParams = [];
+        foreach ($parameters as $index => $parameter) {
+            if (isset($params[$index])) {
+                // Use the provided indexed parameter
+                $resolvedParams[] = $params[$index];
+            } elseif ($parameter->getType() && !$parameter->getType()->isBuiltin()) {
+                // Resolve class dependencies via the container
+                $resolvedParams[] = app($parameter->getType()->getName());
+            } elseif ($parameter->isDefaultValueAvailable()) {
+                // Use the default value if available
+                $resolvedParams[] = $parameter->getDefaultValue();
+            } else {
+                // Throw an exception if a required parameter is missing
+                throw new \InvalidArgumentException("Missing required parameter [{$parameter->getName()}] for [{$class}].");
+            }
+        }
+        return $instance->$action(...$resolvedParams);
     }
 
     /**
