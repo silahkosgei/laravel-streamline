@@ -157,9 +157,10 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
             } elseif ($parameter->isDefaultValueAvailable()) {
                 // Use the default value if available
                 $resolvedParams[] = $parameter->getDefaultValue();
-            } else {
+
+//            } else {
                 // Throw an exception if a required parameter is missing
-                throw new \InvalidArgumentException("Missing required parameter [{$parameter->getName()}] for [{$class}].");
+//                throw new \InvalidArgumentException("Missing required parameter [{$parameter->getName()}] for [{$class}].");
             }
         }
         return $instance->$action(...$resolvedParams);
