@@ -12,7 +12,7 @@ class MakeStream extends Command
      *
      * @var string
      */
-    protected $signature = 'streamline:make-stream {name}';
+    protected $signature = 'make:stream {name}';
 
     /**
      * The console command description.

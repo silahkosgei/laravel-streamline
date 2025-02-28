@@ -47,6 +47,7 @@ class StreamlineServiceProvider extends ServiceProvider
         $this->commands([
             Features\Commands\TestComponent::class,
             Features\Commands\MakeStream::class,
+            Features\Commands\OldMakeStream::class,
         ]);
     }
 }
