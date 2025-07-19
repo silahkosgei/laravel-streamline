@@ -38,6 +38,9 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
         } else {
             $action = array_pop($remainingArgs);
         }
+        $action = Str::studly($action);
+        // lowercase first letter
+        $action = lcfirst($action);
         \request()->merge([
             'stream'=>$streamStr,
             'action'=>$action,
