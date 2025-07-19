@@ -19,14 +19,12 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
 
     public function handleFlatRequest(){
         $args = func_get_args();
-        $argsCollection = collect($args);
-        $lastItem = $argsCollection->last();
         // e.g users/user/1 results in users stream, user function
         // users/list-active results in users stream listActive
         // users/list/active - can be users stream, list function, active is param
         $streamArr = [];
         $streamStr = '';
-        foreach ($argsCollection as $arg) {
+        foreach ($args as $arg) {
             $streamArr[] = $arg;
             $streamStr = implode('/', $streamArr);
             $class = StreamlineSupport::convertStreamToClass($streamStr);
@@ -35,13 +33,17 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
             }
         }
         $remainingArgs = array_diff($args, $streamArr);
-        $action = array_pop($remainingArgs);
-        dd($action, $remainingArgs, $streamStr);
+        if(!$remainingArgs){
+            $action = 'onMounted';
+        } else {
+            $action = array_pop($remainingArgs);
+        }
         \request()->merge([
             'stream'=>$streamStr,
             'action'=>$action,
             'params' => $remainingArgs
         ]);
+        return $this->handleRequest(request());
     }
 
     public function handleRequest(Request $request)
