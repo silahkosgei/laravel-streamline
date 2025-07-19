@@ -17,6 +17,38 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
 
     protected $classReflection;
 
+    public function handleFlatRequest(){
+        $args = func_get_args();
+        // e.g users/user/1 results in users stream, user function
+        // users/list-active results in users stream listActive
+        // users/list/active - can be users stream, list function, active is param
+        $streamArr = [];
+        $streamStr = '';
+        foreach ($args as $arg) {
+            $streamArr[] = $arg;
+            $streamStr = implode('/', $streamArr);
+            $class = StreamlineSupport::convertStreamToClass($streamStr);
+            if(class_exists($class)){
+                break;
+            }
+        }
+        $remainingArgs = array_diff($args, $streamArr);
+        if(!$remainingArgs){
+            $action = 'onMounted';
+        } else {
+            $action = array_pop($remainingArgs);
+        }
+        $action = Str::studly($action);
+        // lowercase first letter
+        $action = lcfirst($action);
+        \request()->merge([
+            'stream'=>$streamStr,
+            'action'=>$action,
+            'params' => $remainingArgs
+        ]);
+        return $this->handleRequest(request());
+    }
+
     public function handleRequest(Request $request)
     {
         $middleware = config('streamline.middleware', []);

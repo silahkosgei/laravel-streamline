@@ -17,7 +17,13 @@ class StreamlineSupport
         if (str_ends_with($stream, $classPostfix)) {
             $classPostfix = '';
         }
-        return config('streamline.class_namespace') . '\\' . $stream . $classPostfix;
+        $class = config('streamline.class_namespace') . '\\' . $stream . $classPostfix;
+        if(!class_exists($class)) {
+           $lastItem = $streamCollection->last();
+           $stream .= '\\' . Str::studly(str_replace('-', ' ', $lastItem));
+           $class = config('streamline.class_namespace') . '\\' . $stream . $classPostfix;
+        }
+        return $class;
     }
 
     public static function getStreamlineClasses(): array
