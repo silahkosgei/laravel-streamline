@@ -201,7 +201,7 @@ class HandleStreamlineRequest extends Controller implements HasMiddleware
     /**
      * Get the middleware that should be assigned to the controller.
      */
-    public static function middleware(): array
+    public function middleware(): array
     {
         $stream = \request('stream');
         $guestStream = config('streamline.guest_streams', []);
